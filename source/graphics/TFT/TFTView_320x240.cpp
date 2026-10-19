@@ -170,6 +170,7 @@ void TFTView_320x240::init(IClientBase *client)
     MeshtasticView::init(client);
 
     ui_init_boot();
+    lv_label_set_text(objects.meshtastic_url, "EkoRelay");
     FileLoader::init(&fileSystem);
     if (!FileLoader::loadBootImage(objects.boot_logo))
         lv_image_set_src(objects.boot_logo, &img_meshtastic_boot_logo_image);
