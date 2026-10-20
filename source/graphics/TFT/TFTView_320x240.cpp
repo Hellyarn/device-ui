@@ -12,6 +12,10 @@
 #include "graphics/map/TileProvider.h"
 #include "graphics/map/URLService.h"
 #include "graphics/view/TFT/Themes.h"
+#ifdef VIEW_320x240
+#include "graphics/view/TFT/EkoRelayHome.h"
+#include "graphics/view/TFT/EkoRelayBoot.h"
+#endif
 #include "images.h"
 #include "input/InputDriver.h"
 #include "lv_i18n.h"
@@ -61,9 +65,6 @@ fs::FS &fileSystem = LittleFS;
 LV_IMAGE_DECLARE(img_circle_image);
 LV_IMAGE_DECLARE(img_no_tile_image);
 LV_IMAGE_DECLARE(node_location_pin24_image);
-#ifdef VIEW_320x240
-LV_IMAGE_DECLARE(img_ekorelay_boot);
-#endif
 
 #define CR_REPLACEMENT 0x0C              // dummy to record several lines in a one line textarea
 #define THIS TFTView_320x240::instance() // need to use this in all static methods
@@ -175,19 +176,7 @@ void TFTView_320x240::init(IClientBase *client)
     ui_init_boot();
     FileLoader::init(&fileSystem);
 #ifdef VIEW_320x240
-    lv_image_set_src(objects.boot_logo, &img_ekorelay_boot);
-    lv_obj_align(objects.boot_logo, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_set_style_bg_color(objects.boot_screen, lv_color_hex(0xf7f7f2), 0);
-    lv_obj_move_background(objects.boot_logo);
-    lv_obj_remove_flag(objects.boot_logo, LV_OBJ_FLAG_CLICKABLE);
-    lv_label_set_text(objects.meshtastic_url, "");
-    lv_obj_set_style_text_color(objects.boot_screen, lv_color_hex(0x003c2b), 0);
-    lv_obj_set_style_text_font(objects.firmware_label, &ui_font_montserrat_12, 0);
-    lv_obj_set_width(objects.firmware_label, 312);
-    lv_obj_set_style_text_align(objects.firmware_label, LV_TEXT_ALIGN_CENTER, 0);
-    lv_label_set_long_mode(objects.firmware_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
-    lv_obj_align(objects.firmware_label, LV_ALIGN_BOTTOM_MID, 0, -2);
-    lv_label_set_text(objects.firmware_label, firmware_version);
+    EkoRelayBoot::init(firmware_version);
 #else
     if (!FileLoader::loadBootImage(objects.boot_logo))
         lv_image_set_src(objects.boot_logo, &img_meshtastic_boot_logo_image);
@@ -387,6 +376,11 @@ void TFTView_320x240::init_screens(void)
     channelGroup = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
     ui_set_active(objects.home_button, objects.home_panel, objects.top_panel);
     ui_events_init();
+#ifdef VIEW_320x240
+    if (lv_display_get_horizontal_resolution(displaydriver->getDisplay()) == 320 &&
+        lv_display_get_vertical_resolution(displaydriver->getDisplay()) == 240)
+        EkoRelayHome::init();
+#endif
 
     // load main screen
     lv_screen_load_anim(objects.main_screen, LV_SCR_LOAD_ANIM_NONE, 300, 0, false);
@@ -521,6 +515,10 @@ void TFTView_320x240::ui_set_active(lv_obj_t *b, lv_obj_t *p, lv_obj_t *tp)
 
     activeButton = b;
     activePanel = p;
+#ifdef VIEW_320x240
+    if (p == objects.home_panel)
+        EkoRelayHome::showMenu();
+#endif
     if (activePanel == objects.messages_panel) {
         lv_group_focus_obj(objects.message_input_area);
     } else if (inputdriver->hasKeyboardDevice() || inputdriver->hasEncoderDevice()) {
@@ -7085,6 +7083,9 @@ void TFTView_320x240::updateNodesStatus(void)
     char buf[40];
     lv_snprintf(buf, sizeof(buf), _p("%d of %d nodes online", nodeCount), nodesOnline, nodeCount);
     lv_label_set_text(objects.home_nodes_label, buf);
+#ifdef VIEW_320x240
+    EkoRelayHome::updateCounts(nodesOnline, nodeCount, unreadMessages);
+#endif
 
     if (nodesFiltered)
         lv_snprintf(buf, sizeof(buf), _("Filter: %d of %d nodes"), nodeCount - nodesFiltered, nodeCount);
@@ -7190,6 +7191,9 @@ void TFTView_320x240::updateUnreadMessages(void)
         lv_obj_set_style_bg_img_src(objects.home_mail_button, &img_home_mail_button_image, LV_PART_MAIN | LV_STATE_DEFAULT);
     }
     lv_label_set_text(objects.home_mail_label, buf);
+#ifdef VIEW_320x240
+    EkoRelayHome::updateCounts(nodesOnline, nodeCount, unreadMessages);
+#endif
 }
 
 /**
@@ -7224,6 +7228,12 @@ void TFTView_320x240::updateTime(void)
         sprintf(&buf[len], _("uptime: %02d:%02d:%02d"), hours, minutes, seconds);
     }
     lv_label_set_text(objects.home_time_label, buf);
+#ifdef VIEW_320x240
+    char clock[20] = "--:--";
+    if (VALID_TIME(curr_time))
+        strftime(clock, sizeof(clock), db.config.display.use_12h_clock ? "%I:%M %p" : "%H:%M", curr_tm);
+    EkoRelayHome::updateStatus(db.config.lora.tx_enabled, lastHeard > 0 && curtime - lastHeard < secs_until_offline, clock);
+#endif
 }
 
 bool TFTView_320x240::updateSDCard(void)

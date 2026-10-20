@@ -9,7 +9,9 @@ assert image.size == (320, 240)
 
 def descriptor(image, name):
     data = bytearray()
-    for r, g, b in image.getdata():
+    pixels = image.tobytes()
+    for i in range(0, len(pixels), 3):
+        r, g, b = pixels[i:i + 3]
         value = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
         data.extend(value.to_bytes(2, "little"))
     rows = ["    " + ", ".join(f"0x{b:02x}" for b in data[i:i + 24]) + ","
