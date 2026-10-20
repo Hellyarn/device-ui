@@ -9,6 +9,7 @@ LV_IMAGE_DECLARE(img_ekorelay_mark);
 namespace EkoRelayHome
 {
 static lv_obj_t *menu;
+static lv_obj_t *firstCard;
 static lv_obj_t *nodeCount;
 static lv_obj_t *messageCount;
 static lv_obj_t *statusLabel;
@@ -65,6 +66,14 @@ void showMenu()
     lv_obj_remove_flag(menu, LV_OBJ_FLAG_HIDDEN);
 }
 
+bool focusMenu()
+{
+    if (!menu || lv_obj_has_flag(menu, LV_OBJ_FLAG_HIDDEN))
+        return false;
+    lv_group_focus_obj(firstCard);
+    return true;
+}
+
 void init()
 {
     if (menu)
@@ -91,6 +100,7 @@ void init()
     statusLabel = label(menu, "LoRa: —    --:--", 8, 4, &ui_font_montserrat_12);
     lv_obj_set_width(statusLabel, 240);
     nodeCount = card(0, "Узлы рядом", "Ожидание данных", &img_nodes_button_image, objects.nodes_button);
+    firstCard = lv_obj_get_parent(nodeCount);
     messageCount = card(1, "Сообщения", "Ожидание данных", &img_messages_button_image, objects.messages_button);
     card(2, "Карта", "Узлы и местоположение", &img_map_button_image, objects.map_button);
     card(3, "Настройки", "Сеть и устройство", &img_settings_button_image, objects.settings_button);

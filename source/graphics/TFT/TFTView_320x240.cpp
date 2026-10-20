@@ -6967,6 +6967,10 @@ void TFTView_320x240::disablePanel(lv_obj_t *panel)
 void TFTView_320x240::setGroupFocus(lv_obj_t *panel)
 {
     if (panel == objects.home_panel) {
+#ifdef VIEW_320x240
+        if (EkoRelayHome::focusMenu())
+            return;
+#endif
         lv_group_focus_obj(objects.home_mail_button);
     } else if (panel == objects.nodes_panel) {
         lv_group_focus_obj(objects.node_button);

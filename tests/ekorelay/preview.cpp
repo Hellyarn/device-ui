@@ -87,8 +87,11 @@ int main(int argc, char **argv)
     assert(findText(objects.home_panel, "Непрочитанных: 0"));
     auto info = findText(objects.top_panel, "i");
     assert(info);
+    assert(EkoRelayHome::focusMenu());
+    assert(lv_group_get_focused(lv_group_get_default()) == lv_obj_get_parent(findText(objects.home_panel, titles[0])));
     lv_obj_send_event(lv_obj_get_parent(info), LV_EVENT_CLICKED, nullptr);
     assert(!lv_obj_has_flag(objects.home_container, LV_OBJ_FLAG_HIDDEN));
+    assert(!EkoRelayHome::focusMenu());
     EkoRelayHome::showMenu();
     assert(lv_obj_has_flag(objects.home_container, LV_OBJ_FLAG_HIDDEN));
     for (auto font : {&ui_font_montserrat_12, &ui_font_montserrat_14}) {
