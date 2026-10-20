@@ -61,6 +61,9 @@ fs::FS &fileSystem = LittleFS;
 LV_IMAGE_DECLARE(img_circle_image);
 LV_IMAGE_DECLARE(img_no_tile_image);
 LV_IMAGE_DECLARE(node_location_pin24_image);
+#ifdef VIEW_320x240
+LV_IMAGE_DECLARE(img_ekorelay_boot);
+#endif
 
 #define CR_REPLACEMENT 0x0C              // dummy to record several lines in a one line textarea
 #define THIS TFTView_320x240::instance() // need to use this in all static methods
@@ -170,8 +173,22 @@ void TFTView_320x240::init(IClientBase *client)
     MeshtasticView::init(client);
 
     ui_init_boot();
-    lv_label_set_text(objects.meshtastic_url, "EkoRelay");
     FileLoader::init(&fileSystem);
+#ifdef VIEW_320x240
+    lv_image_set_src(objects.boot_logo, &img_ekorelay_boot);
+    lv_obj_align(objects.boot_logo, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_bg_color(objects.boot_screen, lv_color_hex(0xf7f7f2), 0);
+    lv_obj_move_background(objects.boot_logo);
+    lv_obj_remove_flag(objects.boot_logo, LV_OBJ_FLAG_CLICKABLE);
+    lv_label_set_text(objects.meshtastic_url, "");
+    lv_obj_set_style_text_color(objects.boot_screen, lv_color_hex(0x003c2b), 0);
+    lv_obj_set_style_text_font(objects.firmware_label, &ui_font_montserrat_12, 0);
+    lv_obj_set_width(objects.firmware_label, 312);
+    lv_obj_set_style_text_align(objects.firmware_label, LV_TEXT_ALIGN_CENTER, 0);
+    lv_label_set_long_mode(objects.firmware_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    lv_obj_align(objects.firmware_label, LV_ALIGN_BOTTOM_MID, 0, -2);
+    lv_label_set_text(objects.firmware_label, firmware_version);
+#else
     if (!FileLoader::loadBootImage(objects.boot_logo))
         lv_image_set_src(objects.boot_logo, &img_meshtastic_boot_logo_image);
     // if boot logo is too big remove the label and center the image
@@ -182,6 +199,7 @@ void TFTView_320x240::init(IClientBase *client)
     } else {
         lv_label_set_text(objects.firmware_label, firmware_version);
     }
+#endif
 
     time(&lastrun60);
     time(&lastrun10);
@@ -515,6 +533,8 @@ void TFTView_320x240::ui_set_active(lv_obj_t *b, lv_obj_t *p, lv_obj_t *tp)
 
 void TFTView_320x240::enterProgrammingMode(void)
 {
+    lv_obj_add_flag(objects.boot_logo, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_remove_flag(objects.firmware_label, LV_OBJ_FLAG_HIDDEN);
     if (state == eEnterProgrammingMode && !db.config.bluetooth.enabled) {
         ILOG_INFO("rebooting into programming mode");
         lv_label_set_text(objects.meshtastic_url, _("Rebooting ..."));
